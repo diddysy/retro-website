@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEON//WAVE — A Retro Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── CSS VARIABLES ──────────────────────────────────── */
+    :root {
+      --cyan:    #00ffe7;
+      --magenta: #ff2d78;
+      --amber:   #ffb800;
+      --violet:  #9b30ff;
+      --bg:      #04050f;
+      --bg2:     #090b1a;
+      --panel:   rgba(0,255,231,0.04);
+      --border:  rgba(0,255,231,0.18);
+      --text:    #c8e0f0;
+      --dim:     #4a6a80;
+    }
+
+    /* ── RESET ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ── SCANLINES OVERLAY ──────────────────────────────── */
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 9999;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.28) 2px,
+        rgba(0,0,0,0.28) 4px
+      );
+    }
+    /* CRT vignette */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 9998;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center,
+        transparent 60%,
+        rgba(0,0,0,0.7) 100%
+      );
+    }
+
+    /* ── ANIMATED BG GRID ───────────────────────────────── */
+    #grid-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        linear-gradient(var(--bg2) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg2) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-color: var(--bg);
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      from { background-position: 0 0, 0 0; }
+      to   { background-position: 0 40px, 40px 0; }
+    }
+
+    /* ── LAYOUT WRAPPER ─────────────────────────────────── */
+    .wrapper {
+      position: relative; z-index: 10;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,5,15,0.92);
+      backdrop-filter: blur(6px);
+    }
+    .header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem; font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 0 16px var(--cyan), 0 0 40px rgba(0,255,231,0.4);
+      letter-spacing: 0.1em;
+      text-decoration: none;
+    }
+    .logo span { color: var(--magenta); }
+    nav { display: flex; gap: 24px; align-items: center; }
+    nav a {
+      font-size: 0.78rem;
+      color: var(--dim);
+      text-decoration: none;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+
+    /* audio toggle button */
+    #audio-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--amber);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #audio-btn:hover {
+      border-color: var(--amber);
+      text-shadow: 0 0 10px var(--amber);
+      box-shadow: 0 0 14px rgba(255,184,0,0.2);
+    }
+    #audio-btn.active {
+      border-color: var(--amber);
+      color: var(--bg);
+      background: var(--amber);
+      text-shadow: none;
+    }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      position: relative;
+    }
+    .hero-eyebrow {
+      font-size: 0.72rem;
+      color: var(--magenta);
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-family: 'VT323', monospace;
+      font-size: clamp(3.5rem, 9vw, 7rem);
+      color: var(--cyan);
+      text-shadow:
+        2px 2px 0 var(--magenta),
+        0 0 40px rgba(0,255,231,0.5),
+        0 0 80px rgba(0,255,231,0.2);
+      line-height: 1;
+      margin-bottom: 20px;
+      animation: flicker 8s infinite;
+    }
+    @keyframes flicker {
+      0%,100%  { opacity: 1; }
+      92%      { opacity: 1; }
+      93%      { opacity: 0.6; }
+      94%      { opacity: 1; }
+      96%      { opacity: 0.8; }
+      97%      { opacity: 1; }
+    }
+    .hero-sub {
+      max-width: 520px; margin: 0 auto 36px;
+      color: var(--dim); font-size: 0.9rem; line-height: 1.7;
+    }
+    .hero-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .tag {
+      font-size: 0.7rem; letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      color: var(--dim);
+    }
+    .tag.hot { border-color: var(--magenta); color: var(--magenta); }
+
+    /* ── MAIN CONTENT GRID ──────────────────────────────── */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 40px;
+      padding: 40px 0 80px;
+    }
+    @media (max-width: 780px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── SECTION LABEL ──────────────────────────────────── */
+    .section-label {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: 28px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ── POST CARDS ─────────────────────────────────────── */
+    .posts { display: flex; flex-direction: column; gap: 28px; }
+
+    .post-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      position: relative;
+      transition: border-color 0.25s, transform 0.25s;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .post-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 0;
+      background: linear-gradient(180deg, var(--cyan), var(--magenta));
+      transition: height 0.3s ease;
+    }
+    .post-card:hover { border-color: rgba(0,255,231,0.4); transform: translateX(4px); }
+    .post-card:hover::before { height: 100%; }
+
+    .post-meta {
+      display: flex; align-items: center; gap: 16px;
+      font-size: 0.68rem; letter-spacing: 0.12em;
+      color: var(--dim); margin-bottom: 12px;
+    }
+    .post-cat {
+      color: var(--magenta);
+      border: 1px solid var(--magenta);
+      padding: 1px 8px;
+      font-size: 0.62rem; letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .post-date { color: var(--dim); }
+    .post-title {
+      font-family: 'VT323', monospace;
+      font-size: 1.9rem;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      line-height: 1.1;
+      text-shadow: 0 0 12px rgba(0,255,231,0.3);
+    }
+    .post-excerpt {
+      font-size: 0.85rem; line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .post-footer {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .read-more {
+      font-size: 0.72rem; letter-spacing: 0.2em;
+      color: var(--amber); text-transform: uppercase;
+      text-decoration: none;
+      transition: text-shadow 0.2s;
+    }
+    .read-more:hover { text-shadow: 0 0 10px var(--amber); }
+    .post-stats { font-size: 0.68rem; color: var(--dim); display: flex; gap: 14px; }
+
+    /* FEATURED CARD */
+    .post-card.featured {
+      border-color: rgba(255,45,120,0.35);
+      background: rgba(255,45,120,0.05);
+    }
+    .post-card.featured .post-title { color: #fff; font-size: 2.6rem; }
+    .post-card.featured::before { background: linear-gradient(180deg, var(--magenta), var(--violet)); }
+    .featured-badge {
+      display: inline-block;
+      background: var(--magenta);
+      color: var(--bg);
+      font-size: 0.6rem; letter-spacing: 0.2em;
+      padding: 2px 8px; margin-bottom: 8px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    /* ── SIDEBAR ────────────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 28px; }
+
+    .widget {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+    }
+    .widget-title {
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem; color: var(--amber);
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 12px rgba(255,184,0,0.4);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,184,0,0.2);
+    }
+
+    /* ABOUT WIDGET */
+    .about-avatar {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 14px;
+    }
+    .about-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem; color: var(--cyan);
+      margin-bottom: 6px;
+    }
+    .about-bio { font-size: 0.78rem; line-height: 1.65; color: var(--dim); }
+
+    /* CATEGORIES WIDGET */
+    .cat-list { display: flex; flex-direction: column; gap: 8px; }
+    .cat-item {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.78rem; color: var(--text);
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer; transition: color 0.2s;
+    }
+    .cat-item:hover { color: var(--cyan); }
+    .cat-count {
+      font-size: 0.68rem; color: var(--dim);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+    }
+
+    /* TRENDING WIDGET */
+    .trend-list { display: flex; flex-direction: column; gap: 14px; }
+    .trend-item { display: flex; gap: 12px; align-items: flex-start; }
+    .trend-num {
+      font-family: 'VT323', monospace; font-size: 2rem;
+      color: rgba(0,255,231,0.2); line-height: 1; min-width: 28px;
+    }
+    .trend-title { font-size: 0.78rem; line-height: 1.4; color: var(--text); cursor: pointer; }
+    .trend-title:hover { color: var(--cyan); }
+    .trend-date { font-size: 0.65rem; color: var(--dim); margin-top: 2px; }
+
+    /* TAGS CLOUD WIDGET */
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cloud-tag {
+      font-size: 0.68rem; letter-spacing: 0.1em;
+      padding: 3px 10px;
+      border: 1px solid var(--border);
+      color: var(--dim); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cloud-tag:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,231,0.2); }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      position: relative; z-index: 10;
+      padding: 36px 0;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem; color: var(--dim); letter-spacing: 0.12em;
+    }
+    .footer-copy { font-size: 0.68rem; color: var(--dim); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a {
+      font-size: 0.68rem; color: var(--dim);
+      text-decoration: none; letter-spacing: 0.1em;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--cyan); }
+
+    /* ── AUDIO VISUALIZER ───────────────────────────────── */
+    #viz-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 44px; z-index: 200;
+      display: flex; align-items: flex-end;
+      gap: 2px; padding: 0 4px;
+      background: linear-gradient(0deg, rgba(4,5,15,0.95), transparent);
+      pointer-events: none;
+    }
+    .viz-col {
+      flex: 1; background: var(--cyan);
+      opacity: 0.5;
+      min-height: 2px;
+      transition: height 0.08s ease;
+    }
+
+    /* ── GLITCH UTILITY ─────────────────────────────────── */
+    @keyframes glitch {
+      0%,100% { clip-path: none; transform: none; }
+      10%      { clip-path: inset(20% 0 60% 0); transform: translate(-4px,0); }
+      20%      { clip-path: inset(70% 0 10% 0); transform: translate(4px,0); }
+      30%      { clip-path: none; transform: none; }
+    }
+    .glitch { animation: glitch 0.3s steps(1) 1; }
+
+    /* ── SCROLLBAR ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+    /* ── CURSOR ─────────────────────────────────────────── */
+    * { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Crect width='12' height='12' fill='%2300ffe7' opacity='.9'/%3E%3C/svg%3E") 6 6, auto; }
+  </style>
+</head>
+<body>
+
+<!-- BACKGROUND GRID -->
+<div id="grid-bg"></div>
+
+<!-- AUDIO VISUALIZER BAR -->
+<div id="viz-bar"></div>
+
+<!-- ═══════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="wrapper header-inner">
+    <a class="logo" href="#">NEON<span>//</span>WAVE</a>
+    <nav>
+      <a href="#">HOME</a>
+      <a href="#">ARCHIVE</a>
+      <a href="#">ABOUT</a>
+      <a href="#">CONTACT</a>
+      <button id="audio-btn" onclick="toggleAudio()">▶ MUSIC: OFF</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════ HERO -->
+<section class="hero">
+  <div class="wrapper">
+    <p class="hero-eyebrow">// TRANSMISSION ONLINE //</p>
+    <h1 id="hero-title">NEON//WAVE</h1>
+    <p class="hero-sub">A retro-futurist blog broadcasting from the digital frontier. Tech, culture, and analog dreams in a digital age.</p>
+    <div class="hero-tags">
+      <span class="tag hot">SYNTHWAVE</span>
+      <span class="tag">CYBERPUNK</span>
+      <span class="tag">TECH</span>
+      <span class="tag">CULTURE</span>
+      <span class="tag hot">NEW POST</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ CONTENT -->
+<main>
+  <div class="wrapper content-grid">
+
+    <!-- POSTS COLUMN -->
+    <div>
+      <div class="section-label">// LATEST TRANSMISSIONS</div>
+      <div class="posts">
+
+        <!-- FEATURED -->
+        <article class="post-card featured">
+          <span class="featured-badge">★ FEATURED</span>
+          <div class="post-meta">
+            <span class="post-cat">SYNTHWAVE</span>
+            <span class="post-date">FEB 24, 2026</span>
+            <span>8 MIN READ</span>
+          </div>
+          <h2 class="post-title">The Grid Never Sleeps: Inside the Digital Underground</h2>
+          <p class="post-excerpt">Deep in the neon-lit corridors of cyberspace, a subculture of artists and hackers is rewriting the rules of what it means to exist between the analog and the digital. We went deep inside their world to find out what drives them — and why the aesthetics of 1984 are more relevant than ever.</p>
+          <div class="post-footer">
+            <a href="#" class="read-more">ACCESS FILE &rarr;</a>
+            <div class="post-stats">
+              <span>♥ 2.4K</span>
+              <span>⟳ 812</span>
+              <span>💬 94</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- POST 2 -->
+        <article class="post-card">
+          <div class="post-meta">
+            <span class="post-cat">TECH</span>
+            <span class="post-date">FEB 20, 2026</span>
+            <span>5 MIN READ</span>
+          </div>
+          <h2 class="post-title">CRT Monitors Are Making a Comeback — Here's Why</h2>
+          <p class="post-excerpt">From garage studios to high-end design lofts, cathode-ray tubes are being rescued from landfills and celebrated as the premium display technology of a past era. We explore the nostalgia market and ask: is it substance, or just aesthetic escapism?</p>
+          <div class="post-footer">
+            <a href="#" class="read-more">ACCESS FILE &rarr;</a>
+            <div class="post-stats"><span>♥ 1.1K</span><span>💬 47</span></div>
+          </div>
+        </article>
+
+        <!-- POST 3 -->
+        <article class="post-card">
+          <div class="post-meta">
+            <span class="post-cat">CULTURE</span>
+            <span class="post-date">FEB 15, 2026</span>
+            <span>6 MIN READ</span>
+          </div>
+          <h2 class="post-title">Chiptune Is Not Dead — It Evolved Into Something Stranger</h2>
+          <p class="post-excerpt">The 8-bit sound that defined a generation of gaming has quietly mutated into a sprawling underground genre that blends hardware synthesis with modern production. Meet the artists who never stopped making bleeps and bloops — and who made them dangerous.</p>
+          <div class="post-footer">
+            <a href="#" class="read-more">ACCESS FILE &rarr;</a>
+            <div class="post-stats"><span>♥ 987</span><span>💬 61</span></div>
+          </div>
+        </article>
+
+        <!-- POST 4 -->
+        <article class="post-card">
+          <div class="post-meta">
+            <span class="post-cat">DESIGN</span>
+            <span class="post-date">FEB 10, 2026</span>
+            <span>4 MIN READ</span>
+          </div>
+          <h2 class="post-title">Pixel Fonts and the War Against Helvetica</h2>
+          <p class="post-excerpt">A new generation of type designers is challenging modernist typographic orthodoxy with bitmap, pixel-grid, and terminal-inspired fonts. Inside the counter-revolution that's making screens weird again — and why that matters for digital identity.</p>
+          <div class="post-footer">
+            <a href="#" class="read-more">ACCESS FILE &rarr;</a>
+            <div class="post-stats"><span>♥ 744</span><span>💬 38</span></div>
+          </div>
+        </article>
+
+        <!-- POST 5 -->
+        <article class="post-card">
+          <div class="post-meta">
+            <span class="post-cat">HARDWARE</span>
+            <span class="post-date">FEB 05, 2026</span>
+            <span>7 MIN READ</span>
+          </div>
+          <h2 class="post-title">Building a Custom Synthesizer With a $40 Microcontroller</h2>
+          <p class="post-excerpt">You don't need a Moog to make hypnotic, haunting sound. We walk through building a fully-functional voltage-controlled oscillator from scratch using nothing but a cheap MCU, some resistors, and a lot of patience. Full schematic included.</p>
+          <div class="post-footer">
+            <a href="#" class="read-more">ACCESS FILE &rarr;</a>
+            <div class="post-stats"><span>♥ 2.9K</span><span>💬 173</span></div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- ABOUT -->
+      <div class="widget">
+        <div class="widget-title">// OPERATOR</div>
+        <div class="about-avatar">⚡</div>
+        <div class="about-name">VECTOR_GHOST</div>
+        <p class="about-bio">Broadcasting from an undisclosed server room somewhere in the ether. Covers tech, design, sound, and the spaces between. Powered by caffeine and cathode rays.</p>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="widget">
+        <div class="widget-title">// SECTORS</div>
+        <div class="cat-list">
+          <div class="cat-item"><span>SYNTHWAVE</span><span class="cat-count">14</span></div>
+          <div class="cat-item"><span>TECHNOLOGY</span><span class="cat-count">23</span></div>
+          <div class="cat-item"><span>HARDWARE</span><span class="cat-count">9</span></div>
+          <div class="cat-item"><span>CULTURE</span><span class="cat-count">18</span></div>
+          <div class="cat-item"><span>DESIGN</span><span class="cat-count">11</span></div>
+          <div class="cat-item"><span>AUDIO</span><span class="cat-count">7</span></div>
+        </div>
+      </div>
+
+      <!-- TRENDING -->
+      <div class="widget">
+        <div class="widget-title">// TRENDING</div>
+        <div class="trend-list">
+          <div class="trend-item">
+            <span class="trend-num">01</span>
+            <div>
+              <div class="trend-title">The Grid Never Sleeps: Inside the Digital Underground</div>
+              <div class="trend-date">FEB 24 · 8 MIN</div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">02</span>
+            <div>
+              <div class="trend-title">Building a Custom Synthesizer With a $40 Microcontroller</div>
+              <div class="trend-date">FEB 05 · 7 MIN</div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">03</span>
+            <div>
+              <div class="trend-title">Chiptune Is Not Dead — It Evolved Into Something Stranger</div>
+              <div class="trend-date">FEB 15 · 6 MIN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAG CLOUD -->
+      <div class="widget">
+        <div class="widget-title">// FREQUENCY TAGS</div>
+        <div class="tag-cloud">
+          <span class="cloud-tag">ANALOG</span>
+          <span class="cloud-tag">MODULAR</span>
+          <span class="cloud-tag">8-BIT</span>
+          <span class="cloud-tag">NEON</span>
+          <span class="cloud-tag">HACKER</span>
+          <span class="cloud-tag">CRT</span>
+          <span class="cloud-tag">FLOPPY</span>
+          <span class="cloud-tag">PIXEL</span>
+          <span class="cloud-tag">OSC</span>
+          <span class="cloud-tag">GLITCH</span>
+          <span class="cloud-tag">VAPORWAVE</span>
+          <span class="cloud-tag">FM</span>
+          <span class="cloud-tag">DARK</span>
+          <span class="cloud-tag">CIRCUIT</span>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════ FOOTER -->
+<footer>
+  <div class="wrapper footer-inner">
+    <div class="footer-logo">NEON//WAVE</div>
+    <div class="footer-copy">© 2026 — ALL SIGNALS RESERVED</div>
+    <div class="footer-links">
+      <a href="#">RSS</a>
+      <a href="#">TWITTER</a>
+      <a href="#">MASTODON</a>
+      <a href="#">NEWSLETTER</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════ SCRIPTS -->
+<script>
+/* ── BUILD AUDIO VISUALIZER BARS ── */
+const vizBar = document.getElementById('viz-bar');
+const BAR_COUNT = 80;
+const bars = [];
+for (let i = 0; i < BAR_COUNT; i++) {
+  const col = document.createElement('div');
+  col.className = 'viz-col';
+  col.style.height = '2px';
+  vizBar.appendChild(col);
+  bars.push(col);
+}
+
+/* ── WEB AUDIO ENGINE ── */
+let audioCtx = null;
+let isPlaying = false;
+let analyser = null;
+let dataArray = null;
+let vizFrame = null;
+let musicNodes = [];
+
+function buildSynth(ctx) {
+  const dest = ctx.destination;
+  const master = ctx.createGain();
+  master.gain.value = 0.22;
+  master.connect(dest);
+
+  // Reverb (convolver with impulse)
+  const reverb = ctx.createConvolver();
+  const reverbGain = ctx.createGain();
+  reverbGain.gain.value = 0.35;
+  const irLen = ctx.sampleRate * 2.5;
+  const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = ir.getChannelData(c);
+    for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
+  }
+  reverb.buffer = ir;
+  reverb.connect(reverbGain);
+  reverbGain.connect(master);
+
+  // Analyser
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  master.connect(analyser);
+  analyser.connect(ctx.destination); // silent passthrough for viz
+
+  // BASSLINE — slow pulsing sub
+  function bass(freq, startT, dur) {
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0, startT);
+    env.gain.linearRampToValueAtTime(0.5, startT + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, startT + dur - 0.05);
+    osc.connect(env); env.connect(master);
+    osc.start(startT); osc.stop(startT + dur);
+    musicNodes.push(osc);
+  }
+
+  // LEAD — sparkly arpeggios
+  function lead(freq, startT, dur) {
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0, startT);
+    env.gain.linearRampToValueAtTime(0.12, startT + 0.01);
+    env.gain.exponentialRampToValueAtTime(0.001, startT + dur);
+    osc.connect(env); env.connect(reverb); env.connect(master);
+    osc.start(startT); osc.stop(startT + dur);
+    musicNodes.push(osc);
+  }
+
+  // PAD — lush chord wash
+  function pad(freqs, startT, dur) {
+    freqs.forEach(f => {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      env.gain.setValueAtTime(0, startT);
+      env.gain.linearRampToValueAtTime(0.08, startT + 0.5);
+      env.gain.linearRampToValueAtTime(0.06, startT + dur - 0.5);
+      env.gain.linearRampToValueAtTime(0, startT + dur);
+      osc.connect(env); env.connect(reverb);
+      osc.start(startT); osc.stop(startT + dur);
+      musicNodes.push(osc);
+    });
+  }
+
+  // KICK
+  function kick(t) {
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+    env.gain.setValueAtTime(0.9, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.connect(env); env.connect(master);
+    osc.start(t); osc.stop(t + 0.2);
+    musicNodes.push(osc);
+  }
+
+  // HI-HAT
+  function hat(t, closed = true) {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    const filt = ctx.createBiquadFilter();
+    const env = ctx.createGain();
+    filt.type = 'highpass'; filt.frequency.value = 8000;
+    src.buffer = buf;
+    const dur = closed ? 0.04 : 0.12;
+    env.gain.setValueAtTime(closed ? 0.25 : 0.15, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(filt); filt.connect(env); env.connect(master);
+    src.start(t); src.stop(t + dur);
+    musicNodes.push(src);
+  }
+
+  // Compose a 4-bar loop and schedule repeating
+  const TEMPO = 120;
+  const BEAT  = 60 / TEMPO;
+  const BAR   = BEAT * 4;
+  const LOOP  = BAR * 4; // 4 bars
+
+  // Chord progression: Am – F – C – G (in A minor)
+  const chords = [
+    [220, 261.63, 329.63],   // Am
+    [174.61, 220, 261.63],   // F
+    [130.81, 164.81, 196],   // C
+    [196, 246.94, 293.66],   // G
+  ];
+
+  // Bassline roots (one octave lower)
+  const bassNotes = [110, 87.31, 65.41, 98];
+
+  // Arp melody (pentatonic feel over chords)
+  const arpSeqs = [
+    [440, 554.37, 659.25, 880, 659.25, 554.37, 440, 329.63],
+    [349.23, 440, 523.25, 698.46, 523.25, 440, 349.23, 261.63],
+    [261.63, 329.63, 392, 523.25, 392, 329.63, 261.63, 196],
+    [392, 493.88, 587.33, 783.99, 587.33, 493.88, 392, 293.66],
+  ];
+
+  let loopStart = ctx.currentTime + 0.05;
+
+  function scheduleLoop(loopT) {
+    for (let bar = 0; bar < 4; bar++) {
+      const barT = loopT + bar * BAR;
+      // Pad
+      pad(chords[bar].map(f => f), barT, BAR + 0.1);
+      // Bass
+      bass(bassNotes[bar], barT, BEAT * 1.8);
+      bass(bassNotes[bar], barT + BEAT * 2, BEAT * 1.8);
+      // Arp lead
+      arpSeqs[bar].forEach((f, i) => lead(f, barT + i * (BEAT / 2), BEAT * 0.45));
+      // Drums — kick on 1 and 3
+      kick(barT);
+      kick(barT + BEAT * 2);
+      // Hats 8th notes
+      for (let h = 0; h < 8; h++) hat(barT + h * (BEAT / 2), h % 2 === 0);
+    }
+  }
+
+  scheduleLoop(loopStart);
+
+  // Re-schedule each loop
+  let nextLoop = loopStart + LOOP;
+  const loopInterval = setInterval(() => {
+    if (!isPlaying) { clearInterval(loopInterval); return; }
+    scheduleLoop(nextLoop);
+    nextLoop += LOOP;
+  }, (LOOP - 0.5) * 1000);
+
+  musicNodes.push({ stop: () => clearInterval(loopInterval) });
+}
+
+function startViz() {
+  function frame() {
+    if (!analyser) return;
+    analyser.getByteFrequencyData(dataArray);
+    const step = Math.floor(dataArray.length / BAR_COUNT);
+    bars.forEach((bar, i) => {
+      const val = dataArray[i * step] || 0;
+      bar.style.height = Math.max(2, (val / 255) * 36) + 'px';
+      // color cycle
+      const hue = (i / BAR_COUNT * 160 + Date.now() * 0.03) % 360;
+      bar.style.background = `hsl(${hue},100%,60%)`;
+    });
+    vizFrame = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function stopViz() {
+  if (vizFrame) cancelAnimationFrame(vizFrame);
+  bars.forEach(b => { b.style.height = '2px'; b.style.background = 'var(--cyan)'; });
+}
+
+function toggleAudio() {
+  const btn = document.getElementById('audio-btn');
+  if (!isPlaying) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    isPlaying = true;
+    buildSynth(audioCtx);
+    startViz();
+    btn.textContent = '■ MUSIC: ON';
+    btn.classList.add('active');
+    // Glitch title on start
+    document.getElementById('hero-title').classList.add('glitch');
+    setTimeout(() => document.getElementById('hero-title').classList.remove('glitch'), 400);
+  } else {
+    isPlaying = false;
+    musicNodes.forEach(n => { try { n.stop ? n.stop() : null; } catch(e){} });
+    musicNodes = [];
+    if (audioCtx) audioCtx.close();
+    audioCtx = null;
+    stopViz();
+    btn.textContent = '▶ MUSIC: OFF';
+    btn.classList.remove('active');
+  }
+}
+
+/* ── HOVER GLITCH ON POST TITLES ── */
+document.querySelectorAll('.post-title').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    el.classList.add('glitch');
+    setTimeout(() => el.classList.remove('glitch'), 320);
+  });
+});
+</script>
+</body>
+</html>
